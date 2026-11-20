@@ -56,8 +56,38 @@ jobs:
           path: dist/*.deb
           if-no-files-found: error
 
-      - name: Publication sur le tag
-        if: startsWith(github.ref, 'refs/tags/debian/')
+      # Publication : sur un tag debian/* poussé à la main, ou sur main quand
+      # la version du changelog n'a pas encore de tag (merge d'une PR de mise à
+      # jour de l'amont) ; le tag est alors créé par la release.
+      - name: Version à publier
+        id: release
+        if: startsWith(github.ref, 'refs/tags/debian/') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        run: |
+          version="$(dpkg-parsechangelog -l packages/myna/debian/changelog -S Version)"
+          tag="debian/${version//\~/_}"
+          if [ "$GITHUB_REF" = refs/heads/main ] && git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            echo "$tag existe déjà : rien à publier"
+            exit 0
+          fi
+          if [ "$GITHUB_REF" != refs/heads/main ] && [ "$GITHUB_REF" != "refs/tags/$tag" ]; then
+            echo "le tag $GITHUB_REF ne correspond pas au changelog ($tag)" >&2
+            exit 1
+          fi
+          notes="packaging-notes/release-${version//\~/_}.md"
+          [ -f "$notes" ] || notes=
+          {
+            echo "publish=true"
+            echo "tag=$tag"
+            echo "name=myna $version (Debian 13)"
+            echo "notes=$notes"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publication
+        if: steps.release.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.release.outputs.name }}
+          body_path: ${{ steps.release.outputs.notes }}
           files: dist/*.deb
