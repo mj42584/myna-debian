@@ -62,6 +62,7 @@ jobs:
       - name: Version à publier
         id: release
         if: startsWith(github.ref, 'refs/tags/debian/') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        shell: bash   # dans un conteneur, le shell par défaut est sh
         run: |
           version="$(dpkg-parsechangelog -l packages/myna/debian/changelog -S Version)"
           tag="debian/${version//\~/_}"
