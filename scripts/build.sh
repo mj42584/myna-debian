@@ -51,7 +51,10 @@ build_one() {
     echo "$version" > "$srcdir/client/.version"
 
     echo "==> $pkg $version"
-    (cd "$srcdir" && debuild --no-lintian -us -uc -b "$@")
+    # debuild remet le PATH à zéro : sans --prepend-path, il prendrait le
+    # cargo 1.85 de Debian au lieu de la toolchain rustup (1.99.0).
+    (cd "$srcdir" && debuild --prepend-path="${CARGO_HOME:-$HOME/.cargo}/bin" \
+        --no-lintian -us -uc -b "$@")
     lintian --info "$root/build/$pkg"/*.changes || true
 }
 

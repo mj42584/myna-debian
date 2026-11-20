@@ -13,7 +13,7 @@ l'amont.
 | Phase | Contenu                                   | État       |
 |-------|-------------------------------------------|------------|
 | 0     | Dépôt, sous-module, squelette             | ✅ fait     |
-| 1     | Préparation de la machine                 | à faire    |
+| 1     | Préparation de la machine                 | ✅ fait     |
 | 2     | Audit des dépendances au snap (`AUDIT.md`)| à faire    |
 | 3     | Compilation du client sans snap           | à faire    |
 | 4     | Moteur Whisper sans snap                  | à faire    |
@@ -77,9 +77,34 @@ Puis :
 
 ## Compiler
 
-Prérequis : voir la phase 1 (liste complète à venir). Le client demande
-Rust 1.99.0 (`upstream/client/rust-toolchain.toml`) alors que trixie fournit
-la 1.85 : il faut rustup.
+### Prérequis (Debian 13)
+
+```bash
+sudo apt install build-essential devscripts debhelper dh-cargo quilt meson ninja-build \
+  pkg-config libgtk-4-dev libadwaita-1-dev libpipewire-0.3-dev libclang-dev \
+  libwayland-dev wayland-protocols libegl-dev libepoxy-dev libgl1-mesa-dev \
+  libglib2.0-dev-bin gettext lintian curl git
+```
+
+Le client demande Rust 1.99.0 (`upstream/client/rust-toolchain.toml`) alors que
+trixie fournit la 1.85 : installer rustup (script officiel, pas le paquet
+Debian `rustup`, qui entre en conflit avec `cargo` et `rustc` tirés par
+`dh-cargo`). La bonne toolchain s'installe toute seule dans `upstream/client/`.
+
+```bash
+curl --proto '=https' -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+. ~/.cargo/env
+(cd upstream/client && rustup show && cargo --version)   # doit afficher 1.99.0
+```
+
+`~/.cargo/bin` doit précéder `/usr/bin` dans le `PATH`, sinon le `cargo` de
+Debian (1.85) est utilisé. Le moteur Whisper demande aussi
+[uv](https://docs.astral.sh/uv/).
+
+`libgtk4-layer-shell-dev` (1.0.4 dans trixie, l'amont utilise la 1.3.0) n'est
+volontairement pas installé : voir la phase 3.
+
+### Construire
 
 ```bash
 scripts/build.sh myna          # ou myna-whisper, myna-config, gnome-shell-extension-myna
