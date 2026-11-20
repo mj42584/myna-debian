@@ -22,6 +22,7 @@ l'amont.
 | 5     | Dictée de bout en bout, sans paquet       | ✅ fait     |
 | 6     | Empaquetage des trois `.deb`              | ✅ fait     |
 | 7     | Validation sur une installation propre    | ✅ fait     |
+| 8     | Suivi automatique de l'amont              | à valider  |
 
 ## Paquets
 
@@ -66,6 +67,18 @@ sur un compte neuf).
 - Réglages de dictation (langue, mode, sons…) : `myna-settings`, par ex.
   `myna-settings set language "'fr'"` ; pris en compte à la volée.
 - Diagnostic : `myna-status`, `journalctl --user -u myna -u myna-whisper`.
+
+### Mettre à jour
+
+Les paquets suivent les releases de l'amont (voir « Mettre à jour l'amont »).
+Depuis un clone de ce dépôt :
+
+```bash
+scripts/install-latest.sh
+```
+
+Le script télécharge la dernière release, l'installe avec `sudo apt install`
+après confirmation et redémarre les services utilisateur actifs.
 
 ### Désinstaller
 
@@ -116,6 +129,9 @@ schéma de `upstream/dev/version.sh` (`X.Y.Z` sur un tag, sinon
 - Tags de ce dépôt : `debian/<version>`, avec `~` remplacé par `_` (git refuse
   `~` dans un nom de ref, convention DEP-14), par exemple
   `debian/0.3.3+git4.ea14d428+deb13_1`.
+- Publication : `build.yml` publie la release sur un tag `debian/*` poussé, ou
+  sur `main` quand la version du changelog n'a pas encore de tag (il le crée).
+  Texte : `packaging-notes/release-<tag>.md`.
 
 ## Récupérer le dépôt
 
@@ -127,21 +143,44 @@ Pour un clone existant : `git submodule update --init`.
 
 ## Mettre à jour l'amont
 
+Presque automatique. L'amont publie une release GitHub une fois ses snaps sur
+edge ; les paquets suivent ces releases.
+
+1. **Détection** (quotidienne, `.github/workflows/watch-upstream.yml`) :
+   `scripts/check-upstream.sh` compare la dernière release publiée de l'amont
+   au commit épinglé.
+2. **Préparation** : `scripts/update-upstream.sh <ref>` déplace le
+   sous-module, ajoute l'entrée `<version>+deb13~1` aux trois
+   `debian/changelog`, met à jour « Amont épinglé » dans les deux README,
+   écrit les notes de release dans `packaging-notes/`, vérifie les patches
+   quilt (fuzz 0) et écrit un rapport dans `build/update-report.md` : alertes
+   ciblées (toolchain Rust, Python, CTranslate2, modèles, nouveaux moteurs,
+   contrat moteur ↔ démon) et diff des chemins de `scripts/watched-paths`
+   (tirés de `AUDIT.md`).
+3. **Pull request** : le workflow pousse la branche `amont/<ref>`, ouvre une PR
+   dont le corps est le rapport (brouillon « ⚠ patch cassé » si un patch ne
+   s'applique plus) et lance `build.yml` sur la branche.
+4. **Relecture et merge** : lire les alertes et le diff, merger. Le
+   `build.yml` de `main` crée le tag et publie la release.
+5. **Installation** : `scripts/install-latest.sh`.
+
+Prérequis du workflow : *Settings → Actions → General → Allow GitHub Actions
+to create and approve pull requests*. Lancement à la main sur une ref donnée :
+`gh workflow run watch-upstream.yml -f ref=origin/main`.
+
+À la main, sans GitHub :
+
 ```bash
-git -C upstream fetch origin
-git -C upstream checkout <nouveau-commit>
-git add upstream
+scripts/check-upstream.sh                    # affiche le nouveau tag s'il y en a un
+scripts/update-upstream.sh --build v0.3.4    # code 3 : patch cassé ; 4 : échec de construction
+less build/update-report.md
+git add -A upstream packages README.md README.fr.md packaging-notes
+git commit -m "amont : passage à v0.3.4"
 ```
 
-Puis :
-
-1. mettre à jour la section « Amont épinglé » et les `debian/changelog` (nouvelle
-   version, `~1`) ;
-2. vérifier que les patches s'appliquent encore : `quilt push -a` dans chaque
-   `build/<paquet>` ;
-3. relire les changements de `myna-snap/`, `whisper-snap/` et `client/` qui
-   touchent aux chemins audités dans `AUDIT.md` ;
-4. faire un commit `amont : passage à <sha>`.
+Patch cassé : le rafraîchir dans `build/<paquet>` avec quilt (`quilt push -f`,
+corriger, `quilt refresh`), le recopier dans `packages/<paquet>/debian/patches/`
+et le commiter sur la branche de la PR.
 
 ## Compiler
 
@@ -240,6 +279,12 @@ scripts/build.sh              assemble build/<paquet> et lance debuild
 scripts/fetch-model.sh        télécharge un modèle Whisper (développement)
 scripts/run-whisper.sh        lance le moteur depuis build/venv-whisper (développement)
 scripts/dev-session.sh        moteur + démon depuis build/, pour tester sans paquet
+scripts/check-upstream.sh     y a-t-il une release amont plus récente ?
+scripts/update-upstream.sh    passe à une nouvelle ref amont, vérifie les patches, rapport
+scripts/watched-paths         chemins amont relus à chaque mise à jour (tirés de AUDIT.md)
+scripts/install-latest.sh     installe la dernière release de ces paquets
+packaging-notes/              notes publiées avec chaque release
 AUDIT.md                      dépendances au snap et leur remplacement
-.github/workflows/build.yml   compilation dans debian:trixie, artefacts sur les tags debian/*
+.github/workflows/build.yml   compilation dans debian:trixie, release sur les tags debian/* ou sur main
+.github/workflows/watch-upstream.yml  veille quotidienne de l'amont, ouvre la PR de mise à jour
 ```

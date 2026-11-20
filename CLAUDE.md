@@ -1,6 +1,7 @@
 # CLAUDE.md : contexte pour les sessions futures
 
-Lire aussi `README.md` (état et versions) et `AUDIT.md` (dépendances au snap).
+Lire aussi `README.fr.md` (état et versions ; `README.md` en est la version
+anglaise publique, à tenir à jour ensemble) et `AUDIT.md` (dépendances au snap).
 
 ## 1. Le projet
 
@@ -77,4 +78,7 @@ jusqu'à la déconnexion.
 - Python 3.13 face aux versions figées de `uv.lock` (CTranslate2 notamment).
 - L'extension et GlobalShortcuts visent GNOME 49+ ; trixie a GNOME 48. Repli :
   `myna --control` + `install-shortcut`.
-- L'amont bouge vite : sous-module épinglé, procédure de mise à jour dans le README.
+- L'amont bouge vite : sous-module épinglé, mise à jour presque automatique
+  (`watch-upstream.yml` → `update-upstream.sh` → PR ; voir le README).
+  `scripts/watched-paths` doit suivre `AUDIT.md` : tout nouveau point de
+  contact avec le snap y ajoute son chemin.

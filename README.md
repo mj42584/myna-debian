@@ -63,6 +63,20 @@ indicator.
 Set the language: when it is unset, Whisper guesses it for every utterance and
 sometimes gets short sentences wrong.
 
+### Updating
+
+New packages follow upstream releases (see "Updating upstream" below). From a
+clone of this repository:
+
+```bash
+scripts/install-latest.sh
+```
+
+It downloads the latest release, installs it with `sudo apt install` after
+asking, and restarts the running user services. Without a clone, download the
+`.deb` files again and run `systemctl --user restart myna-whisper myna`
+after installing.
+
 ### Settings and diagnostics
 
 - Engine settings (model, compute type…): copy
@@ -128,7 +142,9 @@ Package version: `<upstream version>+deb13~<n>`. The upstream version follows
 - Current pinned commit: `0.3.3+git4.ea14d428+deb13~1`
 - Tags: `debian/<version>` with `~` replaced by `_` (git does not allow `~`
   in ref names, DEP-14 convention), e.g. `debian/0.3.3+git4.ea14d428+deb13_1`.
-  Pushing a tag builds the packages on GitHub and publishes them as a release.
+  A release is published by `build.yml` when a `debian/*` tag is pushed, or
+  when `main` carries a changelog version that has no tag yet (the tag is
+  then created). Its text is `packaging-notes/release-<tag>.md`.
 
 ## Build from source
 
@@ -175,19 +191,44 @@ run the engine and the daemon straight from `build/`; see
 
 ## Updating upstream
 
+Mostly automatic. Upstream publishes a GitHub release once its snaps are on
+the edge channel; the packages follow those releases.
+
+1. **Detection** (daily, `.github/workflows/watch-upstream.yml`):
+   `scripts/check-upstream.sh` compares the latest published upstream release
+   with the pinned commit.
+2. **Preparation**: `scripts/update-upstream.sh <ref>` moves the submodule,
+   adds a `debian/changelog` entry (`<version>+deb13~1`) to the three
+   packages, updates "Pinned upstream" in both READMEs, writes the release
+   notes in `packaging-notes/`, checks that the quilt patches still apply
+   (fuzz 0) and writes a review report to `build/update-report.md`: targeted
+   warnings (Rust toolchain, Python, CTranslate2, models, new engines, engine
+   ↔ daemon contract) and the diff of the paths listed in
+   `scripts/watched-paths` (taken from `AUDIT.md`).
+3. **Pull request**: the workflow pushes branch `amont/<ref>`, opens a pull
+   request whose body is the report (a draft titled "⚠ patch cassé" if a
+   patch no longer applies) and runs `build.yml` on the branch.
+4. **Review and merge**: read the warnings and the diff, then merge. The
+   `build.yml` run on `main` tags and publishes the release.
+5. **Install**: `scripts/install-latest.sh`.
+
+The workflow needs *Settings → Actions → General → Allow GitHub Actions to
+create and approve pull requests*. It can also be run by hand with a given
+ref (`gh workflow run watch-upstream.yml -f ref=origin/main`).
+
+By hand, without GitHub:
+
 ```bash
-git -C upstream fetch origin
-git -C upstream checkout <new-commit>
-git add upstream
+scripts/check-upstream.sh                    # prints the new tag, if any
+scripts/update-upstream.sh --build v0.3.4    # exit 3: a patch is broken; 4: build failed
+less build/update-report.md
+git add -A upstream packages README.md README.fr.md packaging-notes
+git commit -m "amont : passage à v0.3.4"
 ```
 
-Then:
-
-1. update "Pinned upstream" and the `debian/changelog` files (new version, `~1`);
-2. check that the patches still apply: `quilt push -a` in each `build/<package>`;
-3. review changes to `myna-snap/`, `whisper-snap/` and `client/` that touch the
-   paths listed in `AUDIT.md`;
-4. commit, rebuild, test dictation, then tag.
+When a patch is broken: refresh it in `build/<package>` with quilt
+(`quilt push -f`, fix, `quilt refresh`), copy it back to
+`packages/<package>/debian/patches/`, and commit to the pull request branch.
 
 ## Layout
 
@@ -198,9 +239,14 @@ scripts/build.sh              assembles build/<package> and runs debuild
 scripts/fetch-model.sh        downloads a Whisper model (development)
 scripts/run-whisper.sh        runs the engine from build/venv-whisper (development)
 scripts/dev-session.sh        engine + daemon from build/, to test without packages
+scripts/check-upstream.sh     is there a newer upstream release?
+scripts/update-upstream.sh    moves to a new upstream ref, checks patches, writes a report
+scripts/watched-paths         upstream paths reviewed on each update (from AUDIT.md)
+scripts/install-latest.sh     installs the latest release of these packages
 AUDIT.md                      snap dependencies and their replacements (French)
 packaging-notes/              release notes published with each tag
-.github/workflows/build.yml   build in debian:trixie, release on debian/* tags
+.github/workflows/build.yml   build in debian:trixie, release on debian/* tags or on main
+.github/workflows/watch-upstream.yml  daily upstream check, opens the update pull request
 ```
 
 ## License
