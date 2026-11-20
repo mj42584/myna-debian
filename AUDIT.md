@@ -171,7 +171,9 @@ documentation (`client/.kb/desktop-integration.md`,
   (`snapd transport error: connect /run/snapd.socket`) et n'affiche que
   l'assistant. « Installer » prépare `snap set system experimental.user-daemons`,
   `snap install myna myna-parakeet`, `snap connect`, puis échoue :
-  `privileged configuration failed: cannot run snap`. Les pages de réglages ne
+  `privileged configuration failed: cannot run snap`, **après** une demande de
+  mot de passe polkit (l'utilisateur s'est authentifié : `pkexec` a bien lancé
+  `myna-config --set-up` en root, qui n'a pas trouvé `snap`). Les pages de réglages ne
   sont pas atteignables. Une option (a) est donc exclue ; reste (b) ou (c).
 - gtk4-layer-shell : le crate `gtk4-layer-shell-sys` 0.5.2 demande
   `gtk4-layer-shell-0 >= 1` (1.3 seulement avec la fonctionnalité `v1_3`, non

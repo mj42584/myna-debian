@@ -65,7 +65,7 @@ jusqu'à la déconnexion.
 ## Conventions
 
 - Version des paquets : `<version amont>+deb13~<n>` ;
-  ex. `0.3.3+git20261119.ea14d42+deb13~1`.
+  ex. `0.3.3+git4.ea14d428+deb13~1`.
 - Tags : `debian/<version>` avec `~` remplacé par `_` (git refuse `~`).
 - `scripts/build.sh <paquet>` copie `upstream/` + `packages/<paquet>/debian`
   dans `build/<paquet>` et lance `debuild`.

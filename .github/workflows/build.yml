@@ -23,6 +23,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0   # upstream/dev/version.sh a besoin de l'historique et des tags
 
       - name: Dépendances de compilation
         run: |

@@ -42,12 +42,12 @@ Rien n'est encore installable.
 
 Version des paquets : `<version amont>+deb13~<n>`. La version amont suit le
 schéma de `upstream/dev/version.sh` (`X.Y.Z` sur un tag, sinon
-`X.Y.Z+git<date du commit>.<sha court>`).
+`X.Y.Z+git<commits depuis le tag>.<sha>`), celui que rapportent les binaires.
 
-- Commit épinglé actuel : `0.3.3+git20261119.ea14d42+deb13~1`
+- Commit épinglé actuel : `0.3.3+git4.ea14d428+deb13~1`
 - Tags de ce dépôt : `debian/<version>`, avec `~` remplacé par `_` (git refuse
   `~` dans un nom de ref, convention DEP-14), par exemple
-  `debian/0.3.3+git20261119.ea14d42+deb13_1`.
+  `debian/0.3.3+git4.ea14d428+deb13_1`.
 
 ## Récupérer le dépôt
 

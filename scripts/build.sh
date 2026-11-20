@@ -14,18 +14,16 @@ usage() {
     exit 2
 }
 
-# Version amont au format de upstream/dev/version.sh, avec la date du commit
-# pour qu'elle croisse dans le temps : X.Y.Z ou X.Y.Z+git<AAAAMMJJ>.<sha>.
+# Version amont, calculée par l'amont lui-même : X.Y.Z sur un tag, sinon
+# X.Y.Z+git<commits depuis le tag>.<sha>. Exige les tags de l'amont (pas de
+# clone superficiel du sous-module).
 upstream_version() {
-    local tag sha date
-    tag="$(git -C "$root/upstream" describe --tags --abbrev=0 --match 'v[0-9]*')"
-    sha="$(git -C "$root/upstream" rev-parse --short=7 HEAD)"
-    if [ "$(git -C "$root/upstream" rev-parse "$tag^{commit}")" = "$(git -C "$root/upstream" rev-parse HEAD)" ]; then
-        echo "${tag#v}"
-    else
-        date="$(git -C "$root/upstream" show -s --format=%cd --date=format:%Y%m%d HEAD)"
-        echo "${tag#v}+git${date}.${sha}"
-    fi
+    local v
+    v="$(bash "$root/upstream/dev/version.sh")"
+    case "$v" in
+        0+git.*) echo "tags de l'amont absents : git -C upstream fetch --tags --unshallow" >&2; exit 1 ;;
+    esac
+    echo "$v"
 }
 
 build_one() {
