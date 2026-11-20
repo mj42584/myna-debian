@@ -17,7 +17,7 @@ l'amont.
 | 2     | Audit des dépendances au snap (`AUDIT.md`)| ✅ fait     |
 | 3     | Compilation du client sans snap           | ✅ fait     |
 | 4     | Moteur Whisper sans snap                  | ✅ fait     |
-| 5     | Dictée de bout en bout, sans paquet       | à faire    |
+| 5     | Dictée de bout en bout, sans paquet       | ✅ fait     |
 | 6     | Empaquetage des quatre `.deb`             | à faire    |
 | 7     | Validation sur une installation propre    | à faire    |
 

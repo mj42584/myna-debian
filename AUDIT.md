@@ -152,11 +152,14 @@ documentation (`client/.kb/desktop-integration.md`,
 
 ## Décisions à prendre
 
-1. **Réglages** : patcher `store_path` (repli `~/.config` hors snap) ou exporter
-   `GSETTINGS_BACKEND=keyfile` partout ? Recommandation : le patch, une ligne,
-   proposable en amont.
-2. **Indicateur** : `environment.d` (aucun patch, mais variable globale à la
-   session) ou patch de `resolve.js` ? Recommandation : le patch.
+1. ~~**Réglages**~~ : tranché en phase 5, patch
+   `packages/myna/debian/patches/0001-settings-native-store.patch` (exporter
+   `GSETTINGS_BACKEND=keyfile` aurait dû valoir pour toute la session, HUD
+   lancé par gnome-shell compris, et sortir toutes les applis GNOME de dconf).
+2. ~~**Indicateur**~~ : tranché en phase 5, patch
+   `packages/gnome-shell-extension-myna/debian/patches/0001-hud-native-binary.patch`
+   (repli `/usr/bin/myna-hud` après l'override et snap ; propre à Debian,
+   l'amont refuse explicitement ce repli dans `resolve.js`).
 3. **Myna Settings** : (a) l'empaqueter tel quel et accepter que les pages
    modèle/assistant échouent ; (b) le patcher pour masquer ce qui dépend de
    snapd ; (c) le reporter et documenter `myna-config`-le-script
@@ -200,3 +203,24 @@ documentation (`client/.kb/desktop-integration.md`,
 - Version rapportée par les binaires sans `client/.version` :
   `0.3.3+git4.ea14d428` (`dev/version.sh` : nombre de commits depuis le tag, pas
   une date).
+
+## Constats de la phase 5 (dictée de bout en bout, 20/11/2026)
+
+Session : `scripts/dev-session.sh base` (moteur + démon depuis `build/`, client
+compilé depuis l'amont patché), raccourci `<Super>d` posé par
+`myna-desktop --install-shortcut` (raccourci personnalisé GNOME → `--toggle`).
+
+- **Dictée** : texte français injecté par IBus dans gedit et dans la barre
+  d'adresse de Firefox ; accents, ponctuation et espaces corrects ; langue
+  détectée par Whisper (fr, 0,98-0,99) ; transcription ≈ 2 s après l'arrêt.
+- **Sans extension** : notification + son à chaque début de dictée.
+- **Avec l'extension** (copiée dans `~/.local/share/gnome-shell/extensions/`,
+  activée après reconnexion) : pilule en bas de l'écran, suivant le niveau de
+  la voix ; l'extension démarre et arrête l'indicateur avec le démon, qui
+  compte 2 clients enregistrés (extension et HUD).
+- **GNOME 48** : rien à contourner ; le raccourci n'utilise plus GlobalShortcuts
+  côté amont.
+- **Non testé** : le repli `/usr/bin/myna-hud` du patch (l'indicateur a été
+  lancé par `MYNA_HUD_BINARY`, défini dans
+  `~/.config/environment.d/50-myna-dev.conf`, à supprimer une fois le paquet
+  installé) ; le mode flux (`--streaming`).
