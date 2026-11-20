@@ -1,0 +1,31 @@
+Description: extension: launch the natively installed renderer
+ The host launches myna-hud through `snap run myna.hud`, or through the
+ MYNA_HUD_BINARY developer override, and stays dormant otherwise. A
+ Debian install has no snapd: fall back to /usr/bin/myna-hud, shipped by
+ the myna package, when the snap launcher is absent. The override and the
+ snap keep precedence.
+Author: mj42584 <113925125+mj42584@users.noreply.github.com>
+Forwarded: not-needed
+Last-Update: 2026-11-20
+---
+--- a/extensions/myna-shell/resolve.js
++++ b/extensions/myna-shell/resolve.js
+@@ -30,6 +30,9 @@ export const OVERRIDE_ENV = 'MYNA_HUD_BI
+ export const SNAP_LAUNCHER = 'snap';
+ export const SNAP_APP = 'myna.hud';
+ 
++/** The renderer of a native (deb) install, used when there is no snap. */
++export const NATIVE_BINARY = '/usr/bin/myna-hud';
++
+ /**
+  * Resolve the argv that launches the renderer.
+  *
+@@ -63,5 +66,8 @@ export function resolveHudLaunch({getenv
+     if (isExecutable(SNAP_LAUNCHER) || isExecutable(`/usr/bin/${SNAP_LAUNCHER}`)) {
+         return {argv: [SNAP_LAUNCHER, 'run', SNAP_APP], source: 'snap'};
+     }
++    // Debian: the renderer installed natively by the myna package.
++    if (isExecutable(NATIVE_BINARY))
++        return {argv: [NATIVE_BINARY], source: 'native'};
+     return {argv: null, source: 'missing'};
+ }
