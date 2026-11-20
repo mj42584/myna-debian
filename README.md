@@ -19,7 +19,7 @@ l'amont.
 | 4     | Moteur Whisper sans snap                  | ✅ fait     |
 | 5     | Dictée de bout en bout, sans paquet       | ✅ fait     |
 | 6     | Empaquetage des trois `.deb`              | ✅ fait     |
-| 7     | Validation sur une installation propre    | à faire    |
+| 7     | Validation sur une installation propre    | ✅ fait     |
 
 ## Paquets
 
@@ -46,9 +46,14 @@ le micro) :
 ```bash
 myna-whisper-fetch-model base                      # tiny, base ou small (≈ 150 Mo pour base)
 systemctl --user enable --now myna-whisper.service myna.service
+myna-settings set language "'fr'"                  # sinon Whisper devine la langue à chaque dictée
 myna-desktop --install-shortcut '<Super>d'         # raccourci GNOME : appui = début/fin
 gnome-extensions enable myna-shell@canonical.com   # après une reconnexion
 ```
+
+Sans langue réglée, Whisper la détecte sur chaque dictée et se trompe parfois
+sur les phrases courtes (russe ou espagnol au lieu du français lors du test
+sur un compte neuf).
 
 - Réglages du moteur (modèle, type de calcul…) : copier
   `/usr/share/doc/myna-whisper/examples/whisper.conf` dans
@@ -57,12 +62,36 @@ gnome-extensions enable myna-shell@canonical.com   # après une reconnexion
   `myna-settings set language "'fr'"` ; pris en compte à la volée.
 - Diagnostic : `myna-status`, `journalctl --user -u myna -u myna-whisper`.
 
+### Désinstaller
+
+```bash
+systemctl --user disable --now myna.service myna-whisper.service   # pour chaque utilisateur, avant
+sudo apt purge myna myna-whisper gnome-shell-extension-myna
+```
+
+`apt purge` ne laisse aucun fichier système, mais ne touche pas aux dossiers
+personnels ni aux sessions ouvertes :
+
+- les services utilisateur déjà lancés continuent de tourner jusqu'à la
+  déconnexion (d'où le `disable --now` préalable) ;
+- restent dans le dossier personnel : les modèles (`~/.local/share/myna`),
+  `~/.config/myna/whisper.conf` s'il a été créé, les réglages de dictation
+  (keyfile GSettings), les liens d'activation dans
+  `~/.config/systemd/user/*.wants/` si `disable` n'a pas été fait, et le
+  raccourci GNOME (Paramètres → Clavier → Raccourcis personnalisés, ou
+  `dconf reset -f /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/myna/`
+  puis retirer son chemin de la clé `custom-keybindings`).
+
 ### Limites connues
 
 - Moteur Whisper CPU seulement (pas de GPU, pas de Parakeet ni des autres
   moteurs de l'amont).
 - `myna-whisper` est lié au Python 3.13 de trixie (roues PyPI) : à reconstruire
   si Debian change de version de Python.
+- Myna Settings n'est pas fourni (frontal de snapd) : réglages en ligne de
+  commande seulement.
+- Testé sur une seule machine (Debian 13, GNOME 48 Wayland, amd64) ; arm64
+  déclaré mais jamais construit.
 - Construction non conforme à la Debian Policy : Rust par rustup, dépendances
   Rust et Python téléchargées pendant le build.
 

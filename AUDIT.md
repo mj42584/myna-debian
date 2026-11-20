@@ -242,3 +242,30 @@ compilé depuis l'amont patché), raccourci `<Super>d` posé par
   `systemctl --user unset-environment MYNA_HUD_BINARY`, mais gnome-shell n'a
   pas redémarré depuis. À vérifier en phase 7 (nouvel utilisateur) :
   `[myna-shell] launched renderer via native: /usr/bin/myna-hud`.
+
+## Constats de la phase 7 (installation propre, 20/11/2026)
+
+Compte neuf `mynatest` sur la même machine (dossier personnel et gestionnaire
+systemd utilisateur vierges ; paquets système partagés), avec les trois `.deb`
+de la phase 6 et les seules étapes du README.
+
+- Moteur et démon démarrés par leurs services, socket dans
+  `/run/user/1001/myna/whisper/`, 7 dictées complètes.
+- **Repli de l'indicateur vérifié** : `[myna-shell] launched renderer via
+  native: /usr/bin/myna-hud`, pilule affichée (aussi sur le compte principal
+  après réinstallation).
+- **Langue** : non réglée sur un compte neuf, donc détectée à chaque dictée ;
+  2 dictées sur 7 détectées en russe (0,18) et en espagnol (0,23). Le README
+  demande désormais `myna-settings set language "'fr'"`.
+- **`apt purge`** : aucun des 2 125 chemins des paquets ne reste, aucune
+  trace dans `/usr`, `/etc`, `/var/lib`, schéma retiré. Restent, comme prévu,
+  les données du dossier personnel (modèle, liens `*.wants` orphelins,
+  raccourci dconf). Les services utilisateur en cours **ne sont pas arrêtés**
+  (binaires supprimés encore en mémoire jusqu'à la déconnexion) : Debian n'a
+  pas de mécanisme pour arrêter les services utilisateur de chaque session à
+  la désinstallation ; documenté (`systemctl --user disable --now` avant).
+- Hors Myna : `deluser --remove-home` de trixie échoue (« invalid characters
+  in input string ») sur les dossiers XDG accentués ; contourné par
+  `deluser` puis `rm -rf`.
+- **Non couvert** : installation sur un système vierge (dépendances des
+  paquets non testées hors de cette machine), arm64, mode flux.
