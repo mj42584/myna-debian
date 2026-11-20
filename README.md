@@ -18,19 +18,53 @@ l'amont.
 | 3     | Compilation du client sans snap           | ✅ fait     |
 | 4     | Moteur Whisper sans snap                  | ✅ fait     |
 | 5     | Dictée de bout en bout, sans paquet       | ✅ fait     |
-| 6     | Empaquetage des quatre `.deb`             | à faire    |
+| 6     | Empaquetage des trois `.deb`              | ✅ fait     |
 | 7     | Validation sur une installation propre    | à faire    |
 
-Rien n'est encore installable.
+## Paquets
 
-## Paquets prévus
+| Paquet                       | Contenu |
+|------------------------------|---------|
+| `myna`                       | démon `myna-desktop` (service utilisateur `myna.service`), indicateur `myna-hud`, `myna-testbed`, `myna-settings` (réglages), `myna-status`, schéma GSettings, traductions |
+| `myna-whisper`               | moteur Whisper CPU (faster-whisper / CTranslate2, runtime Python embarqué dans `/usr/lib/myna-whisper`), service `myna-whisper.service`, `myna-whisper-fetch-model` ; aucun modèle embarqué |
+| `gnome-shell-extension-myna` | indicateur en bas de l'écran (extension `myna-shell@canonical.com`) |
 
-| Paquet                       | Contenu                                                         |
-|------------------------------|-----------------------------------------------------------------|
-| `myna`                       | `myna-desktop`, `myna-cli`, `myna-hud`, service utilisateur     |
-| `myna-whisper`               | moteur faster-whisper (venv dans `/opt/myna-whisper`), sans modèle |
-| `myna-config`                | Myna Settings, adapté de `upstream/myna-config-deb/`            |
-| `gnome-shell-extension-myna` | indicateur HUD, depuis `upstream/extensions/myna-shell/`        |
+**Myna Settings n'est pas empaqueté** : l'application amont est un frontal de
+snapd (installation des modèles, choix du moteur, assistant) et reste bloquée
+sur l'assistant sans snapd (voir `AUDIT.md`). Les réglages se font avec
+`myna-settings`, le raccourci avec `myna-desktop --install-shortcut`.
+
+## Installer
+
+```bash
+sudo apt install ./myna_*.deb ./myna-whisper_*.deb ./gnome-shell-extension-myna_*.deb
+```
+
+Puis, pour chaque utilisateur (rien n'est activé d'office : la dictation ouvre
+le micro) :
+
+```bash
+myna-whisper-fetch-model base                      # tiny, base ou small (≈ 150 Mo pour base)
+systemctl --user enable --now myna-whisper.service myna.service
+myna-desktop --install-shortcut '<Super>d'         # raccourci GNOME : appui = début/fin
+gnome-extensions enable myna-shell@canonical.com   # après une reconnexion
+```
+
+- Réglages du moteur (modèle, type de calcul…) : copier
+  `/usr/share/doc/myna-whisper/examples/whisper.conf` dans
+  `~/.config/myna/whisper.conf`, puis `systemctl --user restart myna-whisper`.
+- Réglages de dictation (langue, mode, sons…) : `myna-settings`, par ex.
+  `myna-settings set language "'fr'"` ; pris en compte à la volée.
+- Diagnostic : `myna-status`, `journalctl --user -u myna -u myna-whisper`.
+
+### Limites connues
+
+- Moteur Whisper CPU seulement (pas de GPU, pas de Parakeet ni des autres
+  moteurs de l'amont).
+- `myna-whisper` est lié au Python 3.13 de trixie (roues PyPI) : à reconstruire
+  si Debian change de version de Python.
+- Construction non conforme à la Debian Policy : Rust par rustup, dépendances
+  Rust et Python téléchargées pendant le build.
 
 ## Amont épinglé
 
@@ -80,16 +114,17 @@ Puis :
 ### Prérequis (Debian 13)
 
 ```bash
-sudo apt install build-essential devscripts debhelper dh-cargo quilt meson ninja-build \
-  pkg-config libgtk-4-dev libadwaita-1-dev libpipewire-0.3-dev libclang-dev \
+sudo apt install build-essential devscripts debhelper quilt pkgconf \
+  libgtk-4-dev libadwaita-1-dev libpipewire-0.3-dev libclang-dev \
   libwayland-dev wayland-protocols libegl-dev libepoxy-dev libgl1-mesa-dev \
-  libglib2.0-dev-bin libgtk4-layer-shell-dev blueprint-compiler gettext lintian curl git
+  libglib2.0-dev libglib2.0-dev-bin libgtk4-layer-shell-dev gettext lintian curl git
+# facultatif, pour compiler Myna Settings à la main : blueprint-compiler
 ```
 
 Le client demande Rust 1.99.0 (`upstream/client/rust-toolchain.toml`) alors que
 trixie fournit la 1.85 : installer rustup (script officiel, pas le paquet
-Debian `rustup`, qui entre en conflit avec `cargo` et `rustc` tirés par
-`dh-cargo`). La bonne toolchain s'installe toute seule dans `upstream/client/`.
+Debian `rustup`, qui entre en conflit avec les paquets `cargo` et `rustc`).
+La bonne toolchain s'installe toute seule dans `upstream/client/`.
 
 ```bash
 curl --proto '=https' -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
@@ -103,7 +138,6 @@ Debian (1.85) est utilisé. Le moteur Whisper demande aussi
 
 gtk4-layer-shell : la 1.0.4 de trixie suffit (le snap embarque la 1.3.0, mais
 le client n'exige que la 1.x, et layer-shell ne sert pas sous GNOME).
-`blueprint-compiler` ne sert qu'à Myna Settings.
 
 ### Compiler le client à la main (développement)
 
@@ -124,11 +158,13 @@ GSETTINGS_SCHEMA_DIR=../../build/schemas GSETTINGS_BACKEND=keyfile \
 ### Construire les paquets
 
 ```bash
-scripts/build.sh myna          # ou myna-whisper, myna-config, gnome-shell-extension-myna
+scripts/build.sh myna          # ou myna-whisper, gnome-shell-extension-myna
 scripts/build.sh all
 ```
 
-Les `.deb` sont produits dans `build/`.
+Les `.deb` sont produits dans `build/<paquet>/`, avec le rapport de lintian.
+`debian/changelog` doit porter la version de `upstream/dev/version.sh`, sinon
+le script s'arrête. Il faut le réseau (crates Rust, roues PyPI).
 
 ## Modèles Whisper
 
@@ -167,7 +203,9 @@ build/target/release/myna-testbed --backend-dir "$XDG_RUNTIME_DIR/myna" \
 upstream/                     sous-module canonical/myna (jamais modifié directement)
 packages/<paquet>/debian/     empaquetage ; modifications de l'amont dans debian/patches/ (quilt)
 scripts/build.sh              assemble build/<paquet> et lance debuild
-scripts/fetch-model.sh        télécharge un modèle Whisper
+scripts/fetch-model.sh        télécharge un modèle Whisper (développement)
+scripts/run-whisper.sh        lance le moteur depuis build/venv-whisper (développement)
+scripts/dev-session.sh        moteur + démon depuis build/, pour tester sans paquet
 AUDIT.md                      dépendances au snap et leur remplacement
 .github/workflows/build.yml   compilation dans debian:trixie, artefacts sur les tags debian/*
 ```

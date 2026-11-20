@@ -28,9 +28,10 @@ jobs:
       - name: Dépendances de compilation
         run: |
           apt-get install -y --no-install-recommends \
-            build-essential devscripts debhelper dh-cargo quilt meson ninja-build \
-            pkg-config libgtk-4-dev libadwaita-1-dev libpipewire-0.3-dev \
-            libclang-dev libwayland-dev wayland-protocols gettext lintian python3
+            build-essential devscripts debhelper pkgconf gettext lintian python3 \
+            libgtk-4-dev libadwaita-1-dev libpipewire-0.3-dev libclang-dev \
+            libwayland-dev wayland-protocols libegl-dev libepoxy-dev libgl1-mesa-dev \
+            libglib2.0-dev libglib2.0-dev-bin libgtk4-layer-shell-dev
 
       - name: Rust (version de upstream/client/rust-toolchain.toml) et uv
         run: |
@@ -44,15 +45,19 @@ jobs:
           git config --global --add safe.directory '*'
           (cd upstream/client && rustup show active-toolchain || rustup toolchain install)
           scripts/build.sh all
+          # Paquets à publier (sans les symboles de débogage).
+          mkdir -p dist
+          find build -maxdepth 2 -name '*.deb' ! -name '*-dbgsym_*' -exec cp {} dist/ \;
+          ls -l dist
 
       - uses: actions/upload-artifact@v4
         with:
           name: debs
-          path: build/*/*.deb
-          if-no-files-found: warn
+          path: dist/*.deb
+          if-no-files-found: error
 
       - name: Publication sur le tag
         if: startsWith(github.ref, 'refs/tags/debian/')
         uses: softprops/action-gh-release@v2
         with:
-          files: build/*/*.deb
+          files: dist/*.deb
