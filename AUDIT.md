@@ -224,3 +224,21 @@ compilé depuis l'amont patché), raccourci `<Super>d` posé par
   lancé par `MYNA_HUD_BINARY`, défini dans
   `~/.config/environment.d/50-myna-dev.conf`, à supprimer une fois le paquet
   installé) ; le mode flux (`--streaming`).
+
+## Constats de la phase 6 (paquets, 20/11/2026)
+
+- `scripts/build.sh all` : `myna`, `myna-whisper` (46 Mo) et
+  `gnome-shell-extension-myna` ; lintian : aucune erreur, avertissements
+  `no-manual-page` seulement (+ nom de `.buildinfo` long).
+- Installés par `apt install ./build/...` sur la machine de développement :
+  schéma compilé, `myna-status` voit `myna-whisper` / `whisper-base`, démon et
+  moteur lancés par leurs services utilisateur (activés à la main, pas
+  d'activation globale), raccourci `/usr/bin/myna-desktop --toggle`, extension
+  chargée depuis `/usr/share/gnome-shell/extensions`. Dictée fonctionnelle.
+- **Non vérifié** : le lancement de `/usr/bin/myna-hud` par l'extension
+  patchée. `MYNA_HUD_BINARY` (test de la phase 5) restait dans l'environnement
+  du gestionnaire systemd utilisateur, qui survit à la déconnexion tant que
+  d'autres processus tiennent la session ; retiré avec
+  `systemctl --user unset-environment MYNA_HUD_BINARY`, mais gnome-shell n'a
+  pas redémarré depuis. À vérifier en phase 7 (nouvel utilisateur) :
+  `[myna-shell] launched renderer via native: /usr/bin/myna-hud`.
