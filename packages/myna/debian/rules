@@ -1,0 +1,62 @@
+#!/usr/bin/make -f
+# Client Rust de Myna, compilé comme le snap (myna-snap/snap/snapcraft.yaml,
+# partie `client`) : cargo --locked avec la toolchain de
+# client/rust-toolchain.toml, fournie par rustup (pas le rustc de Debian, trop
+# ancien). La compilation télécharge les crates : pas de build hors ligne.
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+include /usr/share/dpkg/buildflags.mk
+include /usr/share/dpkg/architecture.mk
+
+export CARGO_TARGET_DIR = $(CURDIR)/target
+export CARGO_INCREMENTAL = 0
+# Symboles de débogage pour le paquet -dbgsym (dh_strip les retire du binaire).
+export CARGO_PROFILE_RELEASE_DEBUG = 2
+# Lien durci (relro, now) et chemins de compilation retirés des binaires.
+export RUSTFLAGS = $(foreach f,$(LDFLAGS),-C link-arg=$(f)) \
+	--remap-path-prefix=$(CURDIR)=/usr/src/myna
+CARGO_TRIPLE = $(DEB_HOST_GNU_CPU)-unknown-linux-gnu
+BINS = myna-desktop myna-testbed myna-hud
+CRATES = -p myna-desktop -p myna-cli -p myna-hud
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	@command -v cargo >/dev/null || { echo "cargo (rustup) introuvable dans le PATH" >&2; exit 1; }
+	cd client && cargo --version
+
+override_dh_auto_build:
+	cd client && cargo build --release --locked $(CRATES)
+	# Traductions : deux domaines, comme le snap.
+	for po in client/myna-desktop/po/*.po client/myna-orchestrator/po/*.po; do \
+		lang=$$(basename $$po .po); \
+		domain=$$(basename $$(dirname $$(dirname $$po))); \
+		mkdir -p debian/locale/$$lang/LC_MESSAGES; \
+		msgfmt -c -o debian/locale/$$lang/LC_MESSAGES/$$domain.mo $$po; \
+	done
+	# Inventaire des licences des crates liées statiquement.
+	cd client && cargo tree --locked -e normal --target $(CARGO_TRIPLE) --prefix none \
+		$(CRATES) --format '{p}|{l}' \
+		| sed 's/ (\*)$$//; s| (/[^)]*)||' | grep -v '^$$' | sort -u \
+		| awk -F'|' '{printf "%-45s %s\n", $$1, $$2}' > ../debian/RUST-DEPENDENCIES
+
+override_dh_auto_test:
+	# Les tests amont demandent une session graphique et un bus privé
+	# (voir upstream/CLAUDE.md) : non lancés ici.
+
+override_dh_auto_install:
+	for b in $(BINS); do \
+		install -Dm755 target/release/$$b debian/myna/usr/bin/$$b; \
+	done
+	mkdir -p debian/myna/usr/share/locale
+	cp -r debian/locale/. debian/myna/usr/share/locale/
+	install -Dm644 debian/RUST-DEPENDENCIES debian/myna/usr/share/doc/myna/RUST-DEPENDENCIES
+
+override_dh_installsystemduser:
+	# Pas d'activation automatique : la dictation ouvre le micro, chaque
+	# utilisateur l'active lui-même (systemctl --user enable --now myna.service).
+	dh_installsystemduser --no-enable
+
+override_dh_auto_clean:
+	rm -rf target debian/locale debian/RUST-DEPENDENCIES

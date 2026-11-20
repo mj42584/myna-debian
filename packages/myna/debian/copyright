@@ -1,0 +1,38 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: myna
+Upstream-Contact: https://github.com/canonical/myna/issues
+Source: https://github.com/canonical/myna
+Comment:
+ The binaries statically link the Rust crates listed, with their licence
+ expressions, in /usr/share/doc/myna/RUST-DEPENDENCIES (generated at build
+ time by `cargo tree`). At the packaged commit they are licensed under MIT,
+ Apache-2.0, BSD-2-Clause, BSD-3-Clause, Zlib, Unlicense, Unicode-3.0 or
+ Apache-2.0 WITH LLVM-exception, each compatible with AGPL-3.0-or-later.
+ Third-party material in the upstream tree (code adapted from OpenAI Whisper,
+ icons from adwaita-icon-theme, ...) is listed with its licence in the
+ upstream NOTICE file, installed as /usr/share/doc/myna/NOTICE.
+
+Files: *
+Copyright: Canonical Ltd.
+License: AGPL-3.0-or-later
+
+Files: debian/*
+Copyright: 2026 mj42584
+License: AGPL-3.0-or-later
+
+License: AGPL-3.0-or-later
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU Affero General Public License as published by the
+ Free Software Foundation, either version 3 of the License, or (at your
+ option) any later version.
+ .
+ This program is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+ for more details.
+ .
+ You should have received a copy of the GNU Affero General Public License
+ along with this program. If not, see <https://www.gnu.org/licenses/>.
+ .
+ The full text is at https://www.gnu.org/licenses/agpl-3.0.txt (Debian does
+ not ship it in /usr/share/common-licenses).

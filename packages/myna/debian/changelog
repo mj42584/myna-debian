@@ -1,0 +1,7 @@
+myna (0.3.3+git4.ea14d428+deb13~1) trixie; urgency=medium
+
+  * Premier empaquetage natif pour Debian 13, sans snapd (amont ea14d428).
+  * debian/patches/0001-settings-native-store.patch : réglages dans
+    ~/.config hors snap.
+
+ -- mj42584 <113925125+mj42584@users.noreply.github.com>  Fri, 20 Nov 2026 10:00:00 +0100

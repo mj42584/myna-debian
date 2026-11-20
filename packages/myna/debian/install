@@ -1,0 +1,5 @@
+debian/myna-settings usr/bin
+debian/myna-status usr/bin
+client/data/glib-2.0/schemas/com.canonical.Myna.Dictation.gschema.xml usr/share/glib-2.0/schemas
+client/data/icons/hicolor/scalable/apps/com.canonical.Myna.svg usr/share/icons/hicolor/scalable/apps
+NOTICE usr/share/doc/myna

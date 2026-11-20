@@ -1,0 +1,20 @@
+#!/bin/sh
+# Lire ou modifier les réglages de dictation (schéma com.canonical.Myna.Dictation),
+# équivalent de la commande `myna.config` du snap.
+#   myna-settings                    liste tous les réglages
+#   myna-settings get <clé>          ex. myna-settings get language
+#   myna-settings set <clé> <valeur> ex. myna-settings set language "'fr'"
+#   myna-settings range|describe|reset <clé>
+# Le démon relit les réglages à la volée.
+set -eu
+SCHEMA=com.canonical.Myna.Dictation
+# Même magasin que le démon : ${XDG_CONFIG_HOME:-~/.config}/glib-2.0/settings/keyfile
+export GSETTINGS_BACKEND=keyfile
+case "${1:-}" in
+    "") exec gsettings list-recursively "$SCHEMA" ;;
+    get | set | reset | reset-recursively | range | describe | list-keys \
+    | list-children | list-recursively | monitor | writable)
+        verb=$1; shift; exec gsettings "$verb" "$SCHEMA" "$@" ;;
+    -h | --help) sed -n '2,9s/^# \{0,1\}//p' "$0"; exit 0 ;;
+    *) exec gsettings "$@" ;;
+esac

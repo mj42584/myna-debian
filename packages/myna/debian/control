@@ -1,0 +1,43 @@
+Source: myna
+Section: utils
+Priority: optional
+Maintainer: mj42584 <113925125+mj42584@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13),
+               gettext,
+               libadwaita-1-dev,
+               libclang-dev,
+               libegl-dev,
+               libepoxy-dev,
+               libgl1-mesa-dev,
+               libglib2.0-dev,
+               libglib2.0-dev-bin,
+               libgtk-4-dev,
+               libgtk4-layer-shell-dev,
+               libpipewire-0.3-dev,
+               libwayland-dev,
+               pkgconf,
+               python3,
+               wayland-protocols,
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/canonical/myna
+Vcs-Browser: https://github.com/canonical/myna
+
+Package: myna
+Architecture: amd64 arm64
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         ibus,
+         libglib2.0-bin,
+Recommends: gnome-shell-extension-myna,
+            myna-whisper,
+            pipewire,
+Description: offline push-to-talk dictation for the desktop
+ Myna captures the microphone while a shortcut is active, sends the audio to
+ a local speech-to-text engine over a Unix socket, and types the transcript
+ into the focused application through IBus. Nothing leaves the machine.
+ .
+ This package ships the dictation daemon (myna-desktop, run as the
+ myna.service user unit), the HUD renderer (myna-hud), the myna-testbed
+ development tool, and the GSettings schema. It needs an inference engine
+ such as myna-whisper. Built natively for Debian, without snapd.

@@ -1,0 +1,14 @@
+[Unit]
+Description=Myna dictation daemon
+Documentation=https://github.com/canonical/myna
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+# Le moteur (myna-whisper.service) place son socket et provider.env dans
+# $XDG_RUNTIME_DIR/myna/<moteur>/ ; relu à chaque appui sur le raccourci.
+ExecStart=/usr/bin/myna-desktop --backend-dir %t/myna
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target
