@@ -15,7 +15,7 @@ l'amont.
 | 0     | Dépôt, sous-module, squelette             | ✅ fait     |
 | 1     | Préparation de la machine                 | ✅ fait     |
 | 2     | Audit des dépendances au snap (`AUDIT.md`)| ✅ fait     |
-| 3     | Compilation du client sans snap           | à faire    |
+| 3     | Compilation du client sans snap           | ✅ fait     |
 | 4     | Moteur Whisper sans snap                  | à faire    |
 | 5     | Dictée de bout en bout, sans paquet       | à faire    |
 | 6     | Empaquetage des quatre `.deb`             | à faire    |
@@ -83,7 +83,7 @@ Puis :
 sudo apt install build-essential devscripts debhelper dh-cargo quilt meson ninja-build \
   pkg-config libgtk-4-dev libadwaita-1-dev libpipewire-0.3-dev libclang-dev \
   libwayland-dev wayland-protocols libegl-dev libepoxy-dev libgl1-mesa-dev \
-  libglib2.0-dev-bin gettext lintian curl git
+  libglib2.0-dev-bin libgtk4-layer-shell-dev blueprint-compiler gettext lintian curl git
 ```
 
 Le client demande Rust 1.99.0 (`upstream/client/rust-toolchain.toml`) alors que
@@ -101,10 +101,27 @@ curl --proto '=https' -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal
 Debian (1.85) est utilisé. Le moteur Whisper demande aussi
 [uv](https://docs.astral.sh/uv/).
 
-`libgtk4-layer-shell-dev` (1.0.4 dans trixie, l'amont utilise la 1.3.0) n'est
-volontairement pas installé : voir la phase 3.
+gtk4-layer-shell : la 1.0.4 de trixie suffit (le snap embarque la 1.3.0, mais
+le client n'exige que la 1.x, et layer-shell ne sert pas sous GNOME).
+`blueprint-compiler` ne sert qu'à Myna Settings.
 
-### Construire
+### Compiler le client à la main (développement)
+
+```bash
+cd upstream/client
+CARGO_TARGET_DIR=../../build/target cargo build --release --locked \
+  -p myna-desktop -p myna-cli -p myna-hud -p myna-config
+# schéma GSettings non installé : le compiler à part
+mkdir -p ../../build/schemas && cp data/glib-2.0/schemas/*.xml ../../build/schemas/
+glib-compile-schemas ../../build/schemas
+GSETTINGS_SCHEMA_DIR=../../build/schemas GSETTINGS_BACKEND=keyfile \
+  ../../build/target/release/myna-desktop --status --backend-dir "$XDG_RUNTIME_DIR/myna"
+```
+
+`CARGO_TARGET_DIR` hors du sous-module évite de le salir. Le binaire du crate
+`myna-cli` s'appelle `myna-testbed`.
+
+### Construire les paquets
 
 ```bash
 scripts/build.sh myna          # ou myna-whisper, myna-config, gnome-shell-extension-myna

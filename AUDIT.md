@@ -162,3 +162,21 @@ documentation (`client/.kb/desktop-integration.md`,
    snapd ; (c) le reporter et documenter `myna-config`-le-script
    (`gsettings`) + `--install-shortcut`. Recommandation : (c) pour une
    première version, puis voir si (b) est raisonnable.
+
+## Constats de la phase 3
+
+- **Myna Settings sans snapd** (testé le 20/11/2026, binaire de
+  `build/target/release`) : l'appli démarre, mais
+  `onboarding::needs_onboarding` conclut que Myna n'est pas installé
+  (`snapd transport error: connect /run/snapd.socket`) et n'affiche que
+  l'assistant. « Installer » prépare `snap set system experimental.user-daemons`,
+  `snap install myna myna-parakeet`, `snap connect`, puis échoue :
+  `privileged configuration failed: cannot run snap`. Les pages de réglages ne
+  sont pas atteignables. Une option (a) est donc exclue ; reste (b) ou (c).
+- gtk4-layer-shell : le crate `gtk4-layer-shell-sys` 0.5.2 demande
+  `gtk4-layer-shell-0 >= 1` (1.3 seulement avec la fonctionnalité `v1_3`, non
+  activée). La 1.0.4 de trixie suffit ; inutile sous GNOME (Mutter n'a pas
+  wlr-layer-shell), l'hôte `--host layer-shell` vise KWin.
+- Version rapportée par les binaires sans `client/.version` :
+  `0.3.3+git4.ea14d428` (`dev/version.sh` : nombre de commits depuis le tag, pas
+  une date).
