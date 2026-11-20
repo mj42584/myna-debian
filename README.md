@@ -14,7 +14,7 @@ l'amont.
 |-------|-------------------------------------------|------------|
 | 0     | Dépôt, sous-module, squelette             | ✅ fait     |
 | 1     | Préparation de la machine                 | ✅ fait     |
-| 2     | Audit des dépendances au snap (`AUDIT.md`)| à faire    |
+| 2     | Audit des dépendances au snap (`AUDIT.md`)| ✅ fait     |
 | 3     | Compilation du client sans snap           | à faire    |
 | 4     | Moteur Whisper sans snap                  | à faire    |
 | 5     | Dictée de bout en bout, sans paquet       | à faire    |
