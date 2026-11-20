@@ -1,0 +1,29 @@
+Description: settings: use ~/.config outside a snap
+ store_path() falls back to the snap-private store
+ (~/snap/myna/common/.config/...) unless GSETTINGS_BACKEND=keyfile is set,
+ so that host tools edit the file the confined daemon reads. In a native
+ install there is no snap: every process (daemon, HUD launched by
+ gnome-shell, Myna Settings) should use the user's own config dir, without
+ having to export GSETTINGS_BACKEND=keyfile into the whole session, which
+ would move every GNOME application off dconf.
+ .
+ Take the keyfile branch whenever SNAP_USER_COMMON is unset. Behaviour
+ inside the snap is unchanged.
+Author: mj42584 <113925125+mj42584@users.noreply.github.com>
+Forwarded: not-yet
+Last-Update: 2026-11-20
+---
+--- a/client/myna-core/src/settings.rs
++++ b/client/myna-core/src/settings.rs
+@@ -303,8 +303,11 @@ impl Store {
+ /// thread that owns the store - for [`watch`], the watcher thread with its
+ /// running loop.
+ pub fn store_path() -> Option<PathBuf> {
++    // Outside a snap there is no snap-private store to share: use the
++    // keyfile in the user's own config dir, as GSETTINGS_BACKEND=keyfile does.
+     let config_dir = if std::env::var_os("GSETTINGS_BACKEND").as_deref()
+         == Some(std::ffi::OsStr::new("keyfile"))
++        || std::env::var_os("SNAP_USER_COMMON").is_none()
+     {
+         std::env::var_os("XDG_CONFIG_HOME")
+             .map(PathBuf::from)
