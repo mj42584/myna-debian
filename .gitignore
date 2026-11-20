@@ -1,0 +1,24 @@
+# Arbres de compilation et produits de debuild
+build/
+*.deb
+*.ddeb
+*.changes
+*.buildinfo
+*.dsc
+*.tar.*
+*.build
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.uv-cache/
+
+# Rust
+target/
+
+# Divers
+*.swp
+*~
+.cache/

@@ -1,0 +1,57 @@
+#!/bin/bash
+# Télécharge un modèle Whisper (format CTranslate2, faster-whisper) dans
+# ${XDG_DATA_HOME:-~/.local/share}/myna/models/<taille>/.
+# Le dépôt Hugging Face est lu dans upstream/whisper-snap/models/<taille>/model.yaml
+# (champ model-card-url), comme le fait le snap.
+#
+# Usage : scripts/fetch-model.sh <taille> [révision]
+#   taille   : tiny, base, small, large-v3, large-v3-turbo
+#   révision : branche, tag ou commit Hugging Face (défaut : main)
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+models_src="$root/upstream/whisper-snap/models"
+
+usage() {
+    echo "usage : $0 <taille> [révision]" >&2
+    echo "tailles : $(ls "$models_src" | tr '\n' ' ')" >&2
+    exit 2
+}
+
+[ $# -ge 1 ] || usage
+size="$1"
+rev="${2:-main}"
+yaml="$models_src/$size/model.yaml"
+[ -f "$yaml" ] || { echo "taille inconnue : $size" >&2; usage; }
+
+url="$(sed -n 's/^model-card-url: *//p' "$yaml")"
+repo="${url#https://huggingface.co/}"
+[ -n "$repo" ] && [ "$repo" != "$url" ] || { echo "model-card-url introuvable dans $yaml" >&2; exit 1; }
+
+dest="${XDG_DATA_HOME:-$HOME/.local/share}/myna/models/$size"
+mkdir -p "${dest%/*}"
+tmp="$(mktemp -d "${dest%/*}/.tmp.XXXXXX")"
+trap 'rm -rf "$tmp"' EXIT
+
+echo "==> $repo@$rev → $dest"
+
+# Liste des fichiers du dépôt via l'API Hugging Face.
+files="$(curl -fsSL "https://huggingface.co/api/models/$repo/revision/$rev" |
+    python3 -I -c 'import json,sys; print("\n".join(s["rfilename"] for s in json.load(sys.stdin)["siblings"]))')"
+
+while IFS= read -r f; do
+    case "$f" in
+        model.bin|config.json|tokenizer.json|vocabulary.*|preprocessor_config.json) ;;
+        *) continue ;;
+    esac
+    echo "  $f"
+    curl -fL --progress-bar -o "$tmp/$f" "https://huggingface.co/$repo/resolve/$rev/$f"
+done <<< "$files"
+
+[ -f "$tmp/model.bin" ] || { echo "model.bin absent du dépôt $repo" >&2; exit 1; }
+
+echo "$repo@$rev" > "$tmp/SOURCE"
+rm -rf "$dest"
+mv "$tmp" "$dest"
+trap - EXIT
+echo "==> modèle installé dans $dest"
