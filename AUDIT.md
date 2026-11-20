@@ -179,6 +179,24 @@ documentation (`client/.kb/desktop-integration.md`,
   `gtk4-layer-shell-0 >= 1` (1.3 seulement avec la fonctionnalité `v1_3`, non
   activée). La 1.0.4 de trixie suffit ; inutile sous GNOME (Mutter n'a pas
   wlr-layer-shell), l'hôte `--host layer-shell` vise KWin.
+## Constats de la phase 4
+
+- `uv sync --locked --extra whisper --no-dev` avec le Python 3.13.5 de Debian :
+  24 paquets, tous en roues binaires (aucune compilation) ; `ctranslate2` 4.8.0,
+  `faster-whisper` 1.2.1, `numpy` 2.5.3, `onnxruntime` 1.27.0. Venv : 381 Mo,
+  dont `onnxruntime` 52 Mo, que le snap élague pour le moteur CPU.
+- Moteur lancé hors snap (`scripts/run-whisper.sh base`) : socket et
+  `provider.env` créés dans `$XDG_RUNTIME_DIR/myna/whisper/`, `myna-desktop
+  --status` voit `myna-whisper` / `whisper-base`, `myna-testbed --clip` transcrit
+  `tests/spread/adapter-smoke/fixture.wav` correctement (≈ 6 s, chargement
+  compris). **Aucun patch nécessaire.**
+- `provider.env` reste après l'arrêt du moteur (voulu par l'amont : identité
+  statique, la présence du socket fait foi).
+- Les dépôts Systran ne contiennent pas `preprocessor_config.json` ; inutile
+  pour faster-whisper.
+
+## Divers (phase 3)
+
 - Version rapportée par les binaires sans `client/.version` :
   `0.3.3+git4.ea14d428` (`dev/version.sh` : nombre de commits depuis le tag, pas
   une date).

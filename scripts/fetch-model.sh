@@ -51,6 +51,7 @@ done <<< "$files"
 [ -f "$tmp/model.bin" ] || { echo "model.bin absent du dépôt $repo" >&2; exit 1; }
 
 echo "$repo@$rev" > "$tmp/SOURCE"
+chmod 755 "$tmp"   # mktemp crée le dossier en 700
 rm -rf "$dest"
 mv "$tmp" "$dest"
 trap - EXIT

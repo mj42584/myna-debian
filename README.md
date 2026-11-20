@@ -16,7 +16,7 @@ l'amont.
 | 1     | Préparation de la machine                 | ✅ fait     |
 | 2     | Audit des dépendances au snap (`AUDIT.md`)| ✅ fait     |
 | 3     | Compilation du client sans snap           | ✅ fait     |
-| 4     | Moteur Whisper sans snap                  | à faire    |
+| 4     | Moteur Whisper sans snap                  | ✅ fait     |
 | 5     | Dictée de bout en bout, sans paquet       | à faire    |
 | 6     | Empaquetage des quatre `.deb`             | à faire    |
 | 7     | Validation sur une installation propre    | à faire    |
@@ -137,6 +137,28 @@ Aucun modèle n'est embarqué. Pour en télécharger un dans
 
 ```bash
 scripts/fetch-model.sh base    # tiny, base, small, large-v3, large-v3-turbo
+```
+
+Le moteur CPU de l'amont ne propose que `tiny`, `base` (défaut) et `small` ;
+`large-*` est prévu pour le GPU (float16).
+
+## Lancer le moteur à la main (développement)
+
+```bash
+cd upstream/server
+UV_PROJECT_ENVIRONMENT=../../build/venv-whisper \
+  uv sync --locked --extra whisper --no-dev --python /usr/bin/python3
+cd ../..
+scripts/run-whisper.sh base     # socket et provider.env dans $XDG_RUNTIME_DIR/myna/whisper/
+```
+
+`scripts/run-whisper.sh` reproduit `upstream/whisper-snap/engines/cpu/server`
+(type de calcul lu dans le `model.yaml` du modèle, déchargement après 300 s
+d'inactivité). Test sans micro, avec le fichier audio de l'amont :
+
+```bash
+build/target/release/myna-testbed --backend-dir "$XDG_RUNTIME_DIR/myna" \
+  --clip upstream/tests/spread/adapter-smoke/fixture.wav --mode batch
 ```
 
 ## Structure
