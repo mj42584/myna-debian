@@ -1,0 +1,27 @@
+# Chemins de upstream/ dont un changement peut casser l'empaquetage hors snap.
+# Tirés de AUDIT.md : à tenir à jour avec lui. Un chemin par ligne, relatif à
+# upstream/ ; un dossier couvre tout son contenu. Lu par update-upstream.sh.
+
+# Recettes des snaps : environnement, scripts de lancement, services
+myna-snap/
+whisper-snap/snap/
+whisper-snap/engines/
+whisper-snap/models/
+
+# Contrat moteur ↔ démon (provider.env, socket)
+client/myna-orchestrator/src/backend/share.rs
+server/src/myna/server/provider_env.py
+server/src/myna/server/lifecycle.py
+
+# Réglages, schéma, injection
+client/myna-core/src/settings.rs
+client/data/glib-2.0/schemas/
+client/myna-desktop/src/inject/ibus.rs
+client/myna-desktop/src/bin/myna-desktop.rs
+
+# Extension GNOME (lancement de l'indicateur)
+extensions/myna-shell/
+
+# Chaîne de compilation
+client/rust-toolchain.toml
+server/pyproject.toml
