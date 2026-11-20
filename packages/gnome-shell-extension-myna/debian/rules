@@ -1,0 +1,8 @@
+#!/usr/bin/make -f
+# Extension JavaScript : rien à compiler. Le Makefile de l'amont vise ses
+# propres conteneurs (workshop) : ni build ni tests ici.
+
+%:
+	dh $@
+
+override_dh_auto_build override_dh_auto_test override_dh_auto_install override_dh_auto_clean:

@@ -1,0 +1,22 @@
+Source: gnome-shell-extension-myna
+Section: gnome
+Priority: optional
+Maintainer: mj42584 <113925125+mj42584@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13),
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/canonical/myna
+
+Package: gnome-shell-extension-myna
+Architecture: all
+Depends: ${misc:Depends},
+         gnome-shell (>= 46),
+         gnome-shell (<< 52),
+         myna,
+Description: GNOME Shell indicator for Myna dictation
+ Myna Dictation Indicator hosts the myna-hud renderer as a focus-safe overlay
+ at the bottom of the screen while the Myna dictation daemon runs: it shows
+ the dictation state and the audio level, never the transcript.
+ .
+ Enable it with `gnome-extensions enable myna-shell@canonical.com` after
+ logging in again.
