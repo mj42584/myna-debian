@@ -1,0 +1,45 @@
+name: Bug report
+description: Something does not work with the myna-debian packages
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        These are unofficial packages. Please report problems here, not to
+        canonical/myna, unless you can reproduce them with the official snaps.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you saw instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      description: "Output of: dpkg-query -W myna myna-whisper gnome-shell-extension-myna"
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: Debian version, desktop and session type, e.g. "Debian 13, GNOME 48, Wayland, amd64".
+    validations:
+      required: true
+  - type: textarea
+    id: status
+    attributes:
+      label: myna-status
+      description: Output of `myna-status`.
+      render: text
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Output of `journalctl --user -b -u myna -u myna-whisper --no-pager | tail -50`
+        and, for indicator problems, `journalctl --user -b -o cat | grep 'myna-shell\]' | tail`.
+        Check them for anything you would rather not share (dictated text is not logged).
+      render: text
