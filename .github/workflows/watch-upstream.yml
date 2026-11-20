@@ -1,0 +1,104 @@
+# Veille quotidienne de l'amont : quand canonical/myna publie une release (ses
+# snaps sont alors sur edge), prépare la mise à jour avec
+# scripts/update-upstream.sh, la pousse sur une branche amont/<ref> et ouvre
+# une pull request dont le corps est le rapport de relecture. La compilation
+# des paquets est lancée sur la branche (build.yml). Merger la PR publie la
+# nouvelle version (build.yml, sur main).
+#
+# Prérequis : Settings → Actions → General → « Allow GitHub Actions to create
+# and approve pull requests ».
+name: watch-upstream
+
+on:
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Ref amont à forcer (tag, commit, origin/main) ; vide = dernière release
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: watch-upstream
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0   # upstream/dev/version.sh a besoin des tags
+
+      - name: Nouvelle release ?
+        id: check
+        env:
+          FORCED: ${{ inputs.ref }}
+        run: |
+          ref="${FORCED:-$(scripts/check-upstream.sh)}"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          [ -n "$ref" ] || exit 0
+          branch="amont/$(echo "$ref" | tr -c 'A-Za-z0-9._\n-' '-')"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            echo "la branche $branch existe déjà : rien à faire"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Outils Debian
+        if: steps.check.outputs.ref != '' && steps.check.outputs.exists != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends devscripts quilt dpkg-dev
+
+      - name: Préparation de la mise à jour
+        id: update
+        if: steps.check.outputs.ref != '' && steps.check.outputs.exists != 'true'
+        env:
+          REF: ${{ steps.check.outputs.ref }}
+        run: |
+          set +e
+          scripts/update-upstream.sh "$REF"
+          rc=$?
+          set -e
+          # 3 : patch cassé ; la PR est ouverte quand même, en brouillon.
+          [ "$rc" -eq 0 ] || [ "$rc" -eq 3 ] || exit "$rc"
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          echo "version=$(dpkg-parsechangelog -l packages/myna/debian/changelog -S Version)" >> "$GITHUB_OUTPUT"
+
+      - name: Branche et pull request
+        if: steps.update.outcome == 'success'
+        env:
+          REF: ${{ steps.check.outputs.ref }}
+          BRANCH: ${{ steps.check.outputs.branch }}
+          VERSION: ${{ steps.update.outputs.version }}
+          RC: ${{ steps.update.outputs.rc }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$BRANCH"
+          git add -A upstream packages README.md README.fr.md packaging-notes
+          git commit -m "amont : passage à $REF" -m "Paquets : $VERSION. Préparé par scripts/update-upstream.sh."
+          git push origin "$BRANCH"
+
+          title="Amont : passage à $REF ($VERSION)"
+          draft=()
+          if [ "$RC" -eq 3 ]; then
+            title="⚠ patch cassé — $title"
+            draft=(--draft)
+          fi
+          # Corps limité à 65 536 caractères par GitHub.
+          head -c 60000 build/update-report.md > body.md
+          gh pr create --base main --head "$BRANCH" --title "$title" --body-file body.md "${draft[@]}"
+
+          # Une PR ouverte avec GITHUB_TOKEN ne déclenche pas build.yml :
+          # on le lance à la main sur la branche (workflow_dispatch est permis).
+          [ "$RC" -eq 3 ] || gh workflow run build.yml --ref "$BRANCH"
