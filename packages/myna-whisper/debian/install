@@ -1,0 +1,4 @@
+debian/myna-whisper-server usr/libexec/myna-whisper
+debian/myna-whisper-fetch-model usr/bin
+whisper-snap/models usr/share/myna-whisper
+NOTICE usr/share/doc/myna-whisper

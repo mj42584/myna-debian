@@ -1,0 +1,63 @@
+#!/usr/bin/make -f
+# Moteur Whisper CPU, assemblé comme le snap (whisper-snap/snap/snapcraft.yaml,
+# partie `server-app`) : le serveur Python de l'amont et ses dépendances
+# figées par server/uv.lock, installés pour le Python 3.13 de Debian dans un
+# dossier privé, puis élagués comme le moteur CPU du snap. uv télécharge les
+# roues depuis PyPI : pas de build hors ligne.
+
+PY = /usr/bin/python3
+LIB = usr/lib/myna-whisper/site-packages
+SITE = debian/myna-whisper/$(LIB)
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	@command -v uv >/dev/null || { echo "uv introuvable dans le PATH" >&2; exit 1; }
+	uv --version
+
+override_dh_auto_build:
+	cd server && uv export --quiet --locked --extra whisper --no-dev \
+		--no-emit-project --format requirements-txt -o ../debian/requirements.txt
+	cd server && uv build --quiet --wheel --out-dir ../debian/wheel
+
+override_dh_auto_test:
+	# La porte d'élagage ci-dessous importe le serveur ; les tests amont
+	# demandent les outils de dev, non embarqués.
+
+override_dh_auto_install:
+	uv pip install --quiet --python $(PY) --target $(SITE) --no-deps \
+		--require-hashes -r debian/requirements.txt
+	uv pip install --quiet --python $(PY) --target $(SITE) --no-deps debian/wheel/*.whl
+	rm -rf $(SITE)/bin
+	# Même élagage et même vérification que le moteur CPU du snap.
+	PRUNE_DROP="onnxruntime google protobuf flatbuffers" \
+	PRUNE_GATE="from myna.testbed.whisper import batch_decode_options as b; assert b('en', None)['vad_filter'] is False" \
+		bash whisper-snap/dev/prune-runtime.sh $(SITE) $(PY)
+	find $(SITE) -name __pycache__ -prune -exec rm -rf {} +
+	$(PY) -I debian/py-licenses.py $(SITE) > debian/PYTHON-DEPENDENCIES
+	install -Dm644 debian/PYTHON-DEPENDENCIES debian/myna-whisper/usr/share/doc/myna-whisper/PYTHON-DEPENDENCIES
+
+# Bibliothèques des roues PyPI (manylinux, autonomes) : pas de paquet de
+# symboles ni de dwz ; dépendance à la libc déclarée à la main dans
+# debian/control (les roues visent la glibc 2.28).
+# Strip simple des .so, suivi d'un import de chaque module natif pour
+# s'assurer que le strip n'a rien cassé (bibliothèques retouchées par
+# auditwheel).
+override_dh_strip:
+	dh_strip -X$(LIB)
+	find $(SITE) -type f -name '*.so*' -exec strip --strip-unneeded {} +
+	$(PY) -B -s -c "import sys; sys.path.insert(0, '$(SITE)'); \
+		import ctranslate2, av, numpy, numpy.linalg, numpy.fft, numpy.random, tokenizers, yaml, websockets.speedups, faster_whisper, myna.server.cli; \
+		print('modules natifs OK après strip')"
+override_dh_dwz:
+	dh_dwz -X$(LIB)
+override_dh_shlibdeps:
+	dh_shlibdeps -X$(LIB)
+
+override_dh_installsystemduser:
+	# Pas d'activation automatique : systemctl --user enable --now myna-whisper.service
+	dh_installsystemduser --no-enable
+
+override_dh_auto_clean:
+	rm -rf debian/requirements.txt debian/wheel debian/PYTHON-DEPENDENCIES

@@ -1,0 +1,30 @@
+Source: myna-whisper
+Section: sound
+Priority: optional
+Maintainer: mj42584 <113925125+mj42584@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13),
+               python3 (>= 3.13),
+               python3 (<< 3.14),
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/canonical/myna
+
+Package: myna-whisper
+Architecture: amd64
+Depends: ${misc:Depends},
+         curl,
+         libc6 (>= 2.28),
+         python3 (>= 3.13),
+         python3 (<< 3.14),
+Recommends: myna,
+Description: Whisper speech-to-text engine for Myna (CPU)
+ Local, offline speech-to-text service for the Myna dictation daemon. It runs
+ OpenAI Whisper models through faster-whisper (CTranslate2) on the CPU and
+ serves the Myna session protocol on a Unix socket in
+ $XDG_RUNTIME_DIR/myna/whisper/, where myna-desktop finds it.
+ .
+ No model is shipped: download one with `myna-whisper-fetch-model base`
+ (tiny, base or small), then enable the myna-whisper.service user unit.
+ .
+ The Python runtime (faster-whisper, CTranslate2, PyAV, NumPy...) is bundled
+ in /usr/lib/myna-whisper, built from the upstream uv.lock for Python 3.13.

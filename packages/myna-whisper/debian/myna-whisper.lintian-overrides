@@ -1,0 +1,13 @@
+# Le runtime Python est embarqué tel que publié sur PyPI (roues manylinux,
+# figées par server/uv.lock de l'amont) ; ces bibliothèques ne viennent pas de
+# Debian, c'est le principe même du paquet (comme le snap de l'amont).
+embedded-library * [usr/lib/myna-whisper/site-packages/*]
+# lapack_lite de NumPy n'appelle pas la libc directement.
+library-not-linked-against-libc [usr/lib/myna-whisper/site-packages/numpy/linalg/lapack_lite.cpython-313-x86_64-linux-gnu.so]
+shared-library-lacks-prerequisites [usr/lib/myna-whisper/site-packages/*]
+# Fichiers des paquets PyPI, laissés tels quels.
+unusual-interpreter python [usr/lib/myna-whisper/site-packages/*]
+executable-not-elf-or-script [usr/lib/myna-whisper/site-packages/*]
+# Bibliothèques privées hors du chemin de ldconfig ; déclencheur ajouté par
+# debhelper à cause du dossier /usr/lib, sans effet.
+package-has-unnecessary-activation-of-ldconfig-trigger

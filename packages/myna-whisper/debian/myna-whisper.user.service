@@ -1,0 +1,14 @@
+[Unit]
+Description=Myna Whisper speech-to-text engine (CPU)
+Documentation=https://github.com/canonical/myna
+
+[Service]
+# Réglages facultatifs (taille du modèle, etc.) : voir
+# /usr/share/doc/myna-whisper/examples/whisper.conf
+EnvironmentFile=-%E/myna/whisper.conf
+ExecStart=/usr/libexec/myna-whisper/myna-whisper-server
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,42 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: myna
+Upstream-Contact: https://github.com/canonical/myna/issues
+Source: https://github.com/canonical/myna
+Comment:
+ /usr/lib/myna-whisper bundles the Python distributions resolved from the
+ upstream server/uv.lock (faster-whisper, CTranslate2, PyAV with its FFmpeg
+ libraries, NumPy, tokenizers, huggingface-hub...), installed from PyPI
+ wheels at build time. Each one, with its licence, is listed in
+ /usr/share/doc/myna-whisper/PYTHON-DEPENDENCIES, and its own licence files
+ are kept in its *.dist-info directory under /usr/lib/myna-whisper. The PyAV
+ wheel also carries FFmpeg (LGPL-2.1-or-later) and GMP (LGPL-3.0-or-later)
+ shared libraries in av.libs/; NumPy carries OpenBLAS (BSD-3-Clause).
+ All are compatible with AGPL-3.0-or-later.
+ Third-party material in the upstream tree is listed in the upstream NOTICE
+ file, installed as /usr/share/doc/myna-whisper/NOTICE. Model weights are not
+ shipped: myna-whisper-fetch-model downloads them (MIT) from Hugging Face.
+
+Files: *
+Copyright: Canonical Ltd.
+License: AGPL-3.0-or-later
+
+Files: debian/*
+Copyright: 2026 mj42584
+License: AGPL-3.0-or-later
+
+License: AGPL-3.0-or-later
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU Affero General Public License as published by the
+ Free Software Foundation, either version 3 of the License, or (at your
+ option) any later version.
+ .
+ This program is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+ for more details.
+ .
+ You should have received a copy of the GNU Affero General Public License
+ along with this program. If not, see <https://www.gnu.org/licenses/>.
+ .
+ The full text is at https://www.gnu.org/licenses/agpl-3.0.txt (Debian does
+ not ship it in /usr/share/common-licenses).
